@@ -9,7 +9,8 @@
 		<StackLayout BackgroundColor="Black" Padding="20,40,20,20" Spacing="50">
 	    	<component:RangeSliderView 
 				BackgroundColor="Transparent"
-				BarColor="#e1000e"
+				ActiveBarColor="#e1000e"
+				InactiveBarColor="#4b4b4d"
 				HandleImageSource="handle.png"
 	    		MinValue="0" 
 	    		MaxValue="35" 
@@ -22,7 +23,8 @@
 
     		<component:RangeSliderView 
 				BackgroundColor="Transparent"
-				BarColor="#e1000e"
+				ActiveBarColor="#e1000e"
+				InactiveBarColor="#4b4b4d"
 				HandleImageSource="handle.png"
     			MinValue="0" 
     			MaxValue="20000" 

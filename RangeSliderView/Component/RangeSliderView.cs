@@ -19,7 +19,9 @@ namespace RangeSliderView.Component
 		#region Private Members
 
 		private Size _viewSize;
-		private BoxView _sliderPath;
+		private BoxView _activeBar;
+		private BoxView _inActiveLeftBar;
+		private BoxView _inActiveRightBar;
 		private Image _leftButton;
 		private Image _rightButton;
 		private RangeSliderBubble _leftBubble;
@@ -35,14 +37,32 @@ namespace RangeSliderView.Component
 
 		public RangeSliderView() 
 		{
-			// Path
-			_sliderPath = new BoxView();
+			// Active Bar
+			_activeBar = new BoxView();
 
-			_sliderPath.SetBinding(BoxView.ColorProperty, new Binding(path: "BarColor", source: this));
+			_activeBar.SetBinding(BoxView.ColorProperty, new Binding(path: "ActiveBarColor", source: this));
 
-			AbsoluteLayout.SetLayoutFlags(_sliderPath, AbsoluteLayoutFlags.None);
+			AbsoluteLayout.SetLayoutFlags(_activeBar, AbsoluteLayoutFlags.None);
 
-			this.Children.Add(_sliderPath);
+			this.Children.Add(_activeBar);
+
+			// Inactive Left Bar
+			_inActiveLeftBar = new BoxView();
+
+			_inActiveLeftBar.SetBinding(BoxView.ColorProperty, new Binding(path: "InactiveBarColor", source: this));
+
+			AbsoluteLayout.SetLayoutFlags(_inActiveLeftBar, AbsoluteLayoutFlags.None);
+
+			this.Children.Add(_inActiveLeftBar);
+
+			// Inactive Right Bar
+			_inActiveRightBar = new BoxView();
+
+			_inActiveRightBar.SetBinding(BoxView.ColorProperty, new Binding(path: "InactiveBarColor", source: this));
+
+			AbsoluteLayout.SetLayoutFlags(_inActiveRightBar, AbsoluteLayoutFlags.None);
+
+			this.Children.Add(_inActiveRightBar);
 
 			// Left Button
 			_leftButton = new Image();
@@ -200,11 +220,18 @@ namespace RangeSliderView.Component
 			set { SetValue(HandleImageSourceProperty, value); }
 		}
 
-		public static readonly BindableProperty BarColorProperty = BindableProperty.Create(nameof(BarColor), typeof(Color), typeof(RangeSliderView), Color.Black);
-		public Color BarColor
+		public static readonly BindableProperty ActiveBarColorProperty = BindableProperty.Create(nameof(ActiveBarColor), typeof(Color), typeof(RangeSliderView), Color.Black);
+		public Color ActiveBarColor
 		{
-			get { return (Color)GetValue(BarColorProperty); }
-			set { SetValue(BarColorProperty, value); }
+			get { return (Color)GetValue(ActiveBarColorProperty); }
+			set { SetValue(ActiveBarColorProperty, value); }
+		}
+
+		public static readonly BindableProperty InactiveBarColorProperty = BindableProperty.Create(nameof(InactiveBarColor), typeof(Color), typeof(RangeSliderView), Color.Black);
+		public Color InactiveBarColor
+		{
+			get { return (Color)GetValue(InactiveBarColorProperty); }
+			set { SetValue(InactiveBarColorProperty, value); }
 		}
 
 		public static readonly BindableProperty FontFamilyProperty = BindableProperty.Create(nameof(FontFamily), typeof(string), typeof(RangeSliderView), string.Empty);
@@ -320,12 +347,12 @@ namespace RangeSliderView.Component
 				return;
 			}
 
-			// Position Slider Path
-			var sliderPathWidth = _viewSize.Width - (PADDING * 2.0);
-			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
-			var pixelsPerStep = sliderPathWidth / numberOfSteps;
+			// Calculate Total Bar Width
+			var totalBarWidth = _viewSize.Width - (PADDING * 2.0);
 
-			_sliderPath.Layout(new Rectangle(PADDING, (_viewSize.Height - SLIDER_PATH_HEIGHT) / 2.0, sliderPathWidth, SLIDER_PATH_HEIGHT));
+			// Calculate Steps
+			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
+			var pixelsPerStep = totalBarWidth / numberOfSteps;
 
 			// Position Left Button
 			var leftButtonX = BUTTON_START_X + ((this.LeftValue / this.Step) * pixelsPerStep);
@@ -344,13 +371,18 @@ namespace RangeSliderView.Component
 
 			// Position Right Bubble
 			_rightBubble.Layout(new Rectangle(rightButtonX + (BUTTON_SIZE / 2.0) - (BUBBLE_WIDTH / 2.0), bubbleY, BUBBLE_WIDTH, BUBBLE_HEIGHT));
+
+			// Position Bars
+			_activeBar.Layout(new Rectangle(leftButtonX + (BUTTON_SIZE / 2.0), (_viewSize.Height - SLIDER_PATH_HEIGHT) / 2.0, rightButtonX - leftButtonX, SLIDER_PATH_HEIGHT));
+			_inActiveLeftBar.Layout(new Rectangle(PADDING, (_viewSize.Height - SLIDER_PATH_HEIGHT) / 2.0, leftButtonX - PADDING, SLIDER_PATH_HEIGHT));
+			_inActiveRightBar.Layout(new Rectangle(rightButtonX + (BUTTON_SIZE / 2.0), (_viewSize.Height - SLIDER_PATH_HEIGHT) / 2.0, totalBarWidth - rightButtonX + (BUTTON_SIZE / 2.0), SLIDER_PATH_HEIGHT));
 		}
 
 		private void LeftButtonPanGesture(object sender, PanUpdatedEventArgs e)
 		{
-			var sliderPathWidth = _viewSize.Width - (PADDING * 2.0);
+			var totalBarWidth = _viewSize.Width - (PADDING * 2.0);
 			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
-			var pixelsPerStep = sliderPathWidth / numberOfSteps;
+			var pixelsPerStep = totalBarWidth / numberOfSteps;
 
 			switch (e.StatusType)
 			{
