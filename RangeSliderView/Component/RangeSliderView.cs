@@ -7,12 +7,16 @@ namespace RangeSliderView.Component
 {
 	public class RangeSliderView : AbsoluteLayout
 	{
+		#region Private Constants
+
 		private const double PADDING = 20.0;
 		private const double SLIDER_PATH_HEIGHT = 5.0;
 		private const double BUTTON_SIZE = 30.0;
 		private const double BUTTON_START_X = PADDING - (BUTTON_SIZE / 2.0);
 		private const double BUBBLE_WIDTH = 64.0;
 		private const double BUBBLE_HEIGHT = 45.0;
+
+		#endregion
 
 		// ------------------------------------------------------------
 
@@ -181,19 +185,22 @@ namespace RangeSliderView.Component
 		#region Commands
 
 		public static readonly BindableProperty LeftValueChangedCommandProperty = BindableProperty.Create(nameof(LeftValueChangedCommand), typeof(ICommand), typeof(RangeSliderView), null);
-		public ICommand LeftValueChangedCommand {
+		public ICommand LeftValueChangedCommand
+		{
 			get { return (ICommand)GetValue(LeftValueChangedCommandProperty); }
 			set { SetValue(LeftValueChangedCommandProperty, value); }
 		}
 
 		public static readonly BindableProperty RightValueChangedCommandProperty = BindableProperty.Create(nameof(RightValueChangedCommand), typeof(ICommand), typeof(RangeSliderView), null);
-		public ICommand RightValueChangedCommand {
+		public ICommand RightValueChangedCommand
+		{
 			get { return (ICommand)GetValue(RightValueChangedCommandProperty); }
 			set { SetValue(RightValueChangedCommandProperty, value); }
 		}
 
 		public static readonly BindableProperty ValueChangeCompletedCommandProperty = BindableProperty.Create(nameof(ValueChangeCompletedCommand), typeof(ICommand), typeof(RangeSliderView), null);
-		public ICommand ValueChangeCompletedCommand {
+		public ICommand ValueChangeCompletedCommand
+		{
 			get { return (ICommand)GetValue(ValueChangeCompletedCommandProperty); }
 			set { SetValue(ValueChangeCompletedCommandProperty, value); }
 		}
@@ -256,37 +263,43 @@ namespace RangeSliderView.Component
 		}
 
 		public static readonly BindableProperty MinValueProperty = BindableProperty.Create(nameof(MinValue), typeof(double), typeof(RangeSliderView), 0.0);
-		public double MinValue {
+		public double MinValue 
+		{
 			get { return (double)GetValue(MinValueProperty); }
 			set { SetValue(MinValueProperty, value); }
 		}
 
 		public static readonly BindableProperty MaxValueProperty = BindableProperty.Create(nameof(MaxValue), typeof(double), typeof(RangeSliderView), 0.0);
-		public double MaxValue {
+		public double MaxValue 
+		{
 			get { return (double)GetValue(MaxValueProperty); }
 			set { SetValue(MaxValueProperty, value); }
 		}
 
 		public static readonly BindableProperty LeftValueProperty = BindableProperty.Create(nameof(LeftValue), typeof(double), typeof(RangeSliderView), 0.0);
-		public double LeftValue {
+		public double LeftValue 
+		{
 			get { return (double)GetValue(LeftValueProperty); }
 			set { SetValue(LeftValueProperty, value); }
 		}
 
 		public static readonly BindableProperty RightValueProperty = BindableProperty.Create(nameof(RightValue), typeof(double), typeof(RangeSliderView), 0.0);
-		public double RightValue {
+		public double RightValue 
+		{
 			get { return (double)GetValue(RightValueProperty); }
 			set { SetValue(RightValueProperty, value); }
 		}
 
 		public static readonly BindableProperty StepProperty = BindableProperty.Create(nameof(Step), typeof(double), typeof(RangeSliderView), 0.0);
-		public double Step {
+		public double Step 
+		{
 			get { return (double)GetValue(StepProperty); }
 			set { SetValue(StepProperty, value); }
 		}
 
 		public static readonly BindableProperty ShowBubblesProperty = BindableProperty.Create(nameof(ShowBubbles), typeof(bool), typeof(RangeSliderView), false);
-		public bool ShowBubbles {
+		public bool ShowBubbles 
+		{
 			get { return (bool)GetValue(ShowBubblesProperty); }
 			set { SetValue(ShowBubblesProperty, value); }
 		}
@@ -299,7 +312,7 @@ namespace RangeSliderView.Component
 
 		private void NotifyLeftValueChanged()
 		{
-			_leftBubble.Text = this.LeftValue.ToString("#0");
+			_leftBubble.Text = this.LeftValue.ToString("#0"); //TODO: Make formatting configurable?
 
 			if (this.LeftValueChanged != null) 
 			{
@@ -314,7 +327,7 @@ namespace RangeSliderView.Component
 
 		private void NotifyRightValueChanged()
 		{
-			_rightBubble.Text = this.RightValue.ToString("#0");
+			_rightBubble.Text = this.RightValue.ToString("#0"); //TODO: Make formatting configurable?
 
 			if (this.RightValueChanged != null) 
 			{
@@ -342,6 +355,7 @@ namespace RangeSliderView.Component
 
 		private void UpdateViews()
 		{
+			// Validation...
 			if(_viewSize.Width < 1 || _viewSize.Height < 1 || this.Step < 1 || this.Step > (this.MaxValue - this.MinValue) || this.MinValue == this.MaxValue)
 			{
 				return;
@@ -351,8 +365,7 @@ namespace RangeSliderView.Component
 			var totalBarWidth = _viewSize.Width - (PADDING * 2.0);
 
 			// Calculate Steps
-			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
-			var pixelsPerStep = totalBarWidth / numberOfSteps;
+			var pixelsPerStep = GetPixelsPerStep();
 
 			// Position Left Button
 			var leftButtonX = BUTTON_START_X + ((this.LeftValue / this.Step) * pixelsPerStep);
@@ -380,27 +393,19 @@ namespace RangeSliderView.Component
 
 		private void LeftButtonPanGesture(object sender, PanUpdatedEventArgs e)
 		{
-			var totalBarWidth = _viewSize.Width - (PADDING * 2.0);
-			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
-			var pixelsPerStep = totalBarWidth / numberOfSteps;
-
 			switch (e.StatusType)
 			{
 				case GestureStatus.Started:
 					_leftButtonPanGesturePosX = _leftButton.X;
 					break;
+
 				case GestureStatus.Running:
-					var leftButtonX = _leftButtonPanGesturePosX + e.TotalX;
-
-					var newLeftValue = ((leftButtonX - BUTTON_START_X) / pixelsPerStep) * this.Step;
-
-					newLeftValue = AdjustLeftValue(newLeftValue);
-
-					if(newLeftValue != this.LeftValue)
+					if(Device.OS == TargetPlatform.Android)
 					{
-						this.LeftValue = newLeftValue;
+						_leftButtonPanGesturePosX = _leftButton.X;
 					}
 
+					this.LeftValue = AdjustLeftValue(((_leftButtonPanGesturePosX + e.TotalX - BUTTON_START_X) / GetPixelsPerStep()) * this.Step);
 					break;
 
 				case GestureStatus.Completed:
@@ -412,26 +417,19 @@ namespace RangeSliderView.Component
 
 		private void RightButtonPanGesture(object sender, PanUpdatedEventArgs e)
 		{
-			var sliderPathWidth = _viewSize.Width - (PADDING * 2.0);
-			var numberOfSteps = (this.MaxValue - this.MinValue) / this.Step;
-			var pixelsPerStep = sliderPathWidth / numberOfSteps;
-
 			switch (e.StatusType)
 			{
 				case GestureStatus.Started:
 					_rightButtonPanGesturePosX = _rightButton.X;
 					break;
+
 				case GestureStatus.Running:
-					var rightButtonX = _rightButtonPanGesturePosX + e.TotalX;
-					var newRightValue = ((rightButtonX - BUTTON_START_X) / pixelsPerStep) * this.Step;
-
-					newRightValue = AdjustRightValue(newRightValue);
-
-					if(newRightValue != this.RightValue)
+					if(Device.OS == TargetPlatform.Android)
 					{
-						this.RightValue = newRightValue;
+						_rightButtonPanGesturePosX = _rightButton.X;
 					}
 
+					this.RightValue = AdjustRightValue(((_rightButtonPanGesturePosX + e.TotalX - BUTTON_START_X) / GetPixelsPerStep()) * this.Step);
 					break;
 
 				case GestureStatus.Completed:
@@ -439,6 +437,11 @@ namespace RangeSliderView.Component
 					ChangeValueFinished();
 					break;
 			}
+		}
+
+		private double GetPixelsPerStep()
+		{
+			return (_viewSize.Width - (PADDING * 2.0)) / ((this.MaxValue - this.MinValue) / this.Step);
 		}
 
 		private double AdjustLeftValue(double leftValue)
